@@ -1,0 +1,205 @@
+---
+title: "Project 2- Vidhi Sapru"
+author: "Vidhi Sapru"
+date: "2022-11-09"
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(fig.height=4, fig.width=5, warning=FALSE, message=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60))
+```
+
+# **Data Obtainment:** 
+In this report I will be using a dataset created by The University of Wisconsin-Madison. Specifically, this data was collected through a fine needle aspirate of breast mass and was then digitalized. Fine needle aspiratation is a type of biopsy done where a needle is inserted in the body where there seems to be something abnormal. The sample collected from the biopsy allows doctors to understand what is happening in the patients body, and possibly what is causing the abnormality. The dataset focuses on benign and malignant tumors, and specifically looks at the physical traits of the tumor. Some being, mean radius, perimeter, texture, and smoothness. I was easily able to obtain this dataset from an outside source- Kaggle. I was then able to download the dataset from Kaggle and read it into R by using the read.csv function. In this specific dataset there were no N/A values or other factors which would majorly impact the tidyness of the dataset. However, when uploading the dataset to R there was an extra column added,"X", which did not have any values, but also did not impact the data. I was able to obtain and read in the data without any difficulties and did not have to make any changes to the dataset. 
+
+# **Purpose:** 
+I chose this dataset because I have been interested in cancer research and wanted to strengthen my understanding about breast cancer; specifically focusing on the tumors physical characteristics. Although, I have some previous knowledge about malignant and benign tumors, I wanted to look at the tumor itself and it's features. Furthermore, the purpose of this report is to examine physical differences between malignant and benign tumors to further understand how they vary and how that impacts an individuals overall diagnosis. More specifically how their mean radius, perimeter, area, and other characteristics of the two tumor types differ. 
+
+```{r, include=FALSE}
+library(stringr)
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(knitr)
+bc <- read.csv("Breastcancer.csv")
+bc
+```
+
+# **Exploring Specific Variables**
+```{r, include=FALSE}
+# Creating a new table with select variables 
+breastcancer <- select(bc, "diagnosis","radius_mean","perimeter_mean","texture_mean", "area_mean", "smoothness_mean")
+breastcancer
+```
+
+In the "breastcancer" dataset I created, I chose to focus on the following variables the mean radius, mean perimeter, mean texture, mean area, and mean smoothness. In this dataset there are no missing values and I chose to specifically focus on the averages of the following variables listed below.  
+
+```{r, echo=FALSE}
+variables5 <- tribble( ~"Variable Name", ~"Description/Content", ~"Variable Type", 
+         "Diagnosis", "The diagnosis for the patient. M- Malignant and B- Benign", "Categorical",
+         "radius_mean", "Represents the mean radius of the tumor","Numeric",
+         "perimeter_mean", "Represents the mean perimeter of the tumor","Numeric",
+         "texture_mean", "Represents the mean texture of the tumor","Numeric", 
+         "area_mean", "Represents the mean area of the tumor","Numeric",
+         "smoothness_mean", "Represents the mean smoothness of the tumor","Numeric")
+kable(variables5, format="pipe", caption="Breast Cancer Variables",digits=2)
+```
+
+# **Creating 3 New Variables**
+
+Using a function, for loop, and "if else" statement, I was able to create a new variable where diagnoses with a radius above the average radius - for the entire dataset- were assigned either "TRUE" for being above the mean radius or "FALSE" for being below. For the other two variables I created, I used the mean function and created a new variable to assign either "TRUE" or "FALSE" to each diagnosis. 
+```{r, include=FALSE}
+mean(breastcancer$radius_mean)
+n <- nrow(breastcancer)
+mean.radius.above <- c()
+radius.above.average <- function(my.variable){
+  for (i in 1:n) {
+  if (my.variable[i] > 14.12729) mean.radius.above[i] = "TRUE"
+  else mean.radius.above[i] = "FALSE"
+  }
+return(mean.radius.above)
+}
+my.new.variable = radius.above.average(breastcancer$radius_mean)
+breastcancer$mean.radius.above = my.new.variable
+```
+
+```{r, include=FALSE}
+mean(breastcancer$perimeter_mean)
+perimeter.above.average <- (breastcancer$perimeter_mean > 91.96903)
+perimeter.above.average
+breastcancer$perimeter.above.average <- c(perimeter.above.average)
+```
+
+```{r, include=FALSE}
+mean(breastcancer$area_mean)
+area.above.average <- (breastcancer$area_mean > 654.8891)
+area.above.average
+breastcancer$area.above.average <- c(area.above.average)
+```
+
+I chose to focus on which specific tumor types were above the average radius, perimeter, and area. When creating these variables I took the average of each individual column and created a function, such that if the value was above the average it would print "TRUE" and if the value was below "FALSE" would be printed in a new column. There were no missing values found in any of the variables. 
+
+```{r, echo=FALSE}
+variables3 <- tribble( ~"Variable Name", ~"Content/Description", ~"Variable Type", ~"Derivation",
+         "mean.radius.above", "Shows whether the mean radius for the tumor is above (TRUE) or below (FALSE) the overall radius average in the entire dataset.", "Categorical","Derived by taking the mean of the area in the breastcancer dataset and creating a function.",
+         "perimeter.above.average", "Shows whether the mean perimeter for each diagnosis is above (TRUE) or below (FALSE) the average perimiter size for the entire dataset.", "Categorial","Derived by taking the mean of the perimeter, then creating a new variable which exhibits whether each diagnosis was above or below the dataset's average.", "area.above.average", "Shows whether the mean area for a specific diagnosis is above (TRUE) or below (FALSE) the average are compared to the entire dataset.", "Categorial","Derived by taking the mean of the area, then creating a new variable which exhibits whether each diagnosis was above or below the dataset's average.")
+kable(variables3, format="pipe", caption="New Breast Cancer Variables",digits=2)
+```
+
+
+# **Univariate Graphs**
+*As an important note, all the univarate graphs below are color coded so that blue represents malignant tumors and red represents benign tumors.*
+
+The table below shows the number of benign and malignant diagnoses. I created this table using a for loop and the kable function. This table will later referenced to understand certain graphs.
+```{r, echo=FALSE}
+diagnosis = c("B","M")
+diagnosis.count = c()
+for(i in diagnosis){
+  diagnosis.count = c(diagnosis.count, sum(str_detect(breastcancer$diagnosis, i)))
+}
+my.tibble = tibble(diagnosis=diagnosis, diagnosis.count=diagnosis.count)
+colnames(my.tibble) <- c("Diagnosis Type", "Count")
+kable(my.tibble, format="pipe", caption="Number of Malignant and Benign Tumors")
+```
+
+In order to create all the univariate graphs, I created a function which would allow one to change the variable, color, title, and axis labels. I named the function "plot.univariate" and used it for each of the histogram graphs below. 
+```{r, echo=FALSE}
+plot.univariate <- function(predv, color.want, title.want = "Distribution of Variable",x.want= "Predictor Variable", y.want="Frequency"){
+  ggplot() + geom_histogram(aes(x = predv, col = color.want)) +
+theme(legend.position = 'none') +
+labs(x = x.want, y = 'Frequency', title = title.want)
+  }
+```
+
+
+The graph below explores how the mean radius of a malignant and benign tumor differ from one another. Based off of the graph majority of benign tumors radius are about 13, whereas for malignant tumors the distribution is spread evenly. Moreover, the counts for the benign tumor are much higher compared to the malignant tumor, this could be due to there being more data for benign tumors (357) and less for malignant (212). Taking a look at the means, the overall mean radius for maligant tumors is `r mean(breastcancer$radius_mean[breastcancer$diagnosis == "M"])` which is higher than the mean for benign tumors, `r  mean(breastcancer$radius_mean[breastcancer$diagnosis == "B"])`. Furthermore, malignant tumors seem to have a larger radius which means that the cancer cells are growing and possibly invading and destroying tissue in the body; also making it more harmful to an individual. 
+
+```{r, echo=FALSE}
+plot.univariate(breastcancer$radius_mean, color.want=breastcancer$diagnosis,title.want="Distribution of the Mean Radius of a Tumor",x.want="Mean Radius of Tumor")
+```
+
+The graph below explores how the mean perimeter of a malignant and benign tumor differ from one another. Based off of the graph majority of benign tumors perimeters fall at around 80, whereas for malignant tumors the distribution is spread evenly and not significantly higher in certain . Moreover, as seen in the previous graph, the counts for the benign tumor are much higher compared to the malignant tumor. Taking a look at the means, the overall mean perimeter for maligant tumors is `r mean(breastcancer$perimeter_mean[breastcancer$diagnosis == "M"])` which is higher than the mean for benign tumors, `r  mean(breastcancer$perimeter_mean[breastcancer$diagnosis == "B"])`. Furthermore, malignant tumors seem to generally have larger perimeters, which further shows the danger they cause to one's body.
+
+```{r, echo=FALSE}
+plot.univariate(breastcancer$perimeter_mean, color.want= breastcancer$diagnosis, title.want="Distribution of the Mean Perimiter of a\n Tumor",x.want="Mean Perimeter of Tumor")
+```
+
+The graph below exhibits the mean texture of a tumor for malignant and benign tumors. To provide a little background about texture- mammographic texture helps researchers take another factor into account when looking at tumors and their physical characteristics to asses the level of danger. As shown in the graph, malignant tumors have higher texture values, again showing the dangers of having higher texture levels. However, in comparison to the previous graphs both tumor types overlap more and are closer in mean texture values. The overall mean texture for maligant tumors is `r mean(breastcancer$texture_mean[breastcancer$diagnosis == "M"])` which is still higher than the mean for benign tumors, `r  mean(breastcancer$texture_mean[breastcancer$diagnosis == "B"])`, but closer in value. This could be due texture not having as much of an impact on a cancer diagnosis.  
+
+```{r, echo=FALSE}
+plot.univariate(breastcancer$texture_mean, color.want=breastcancer$diagnosis, title.want="Distribution of the Mean Texture of a Tumor", x.want="Mean Texture of Tumor")
+```
+
+The graph below explores the mean area of a malignant and benign tumor. Compared to bengin tumors, malignant tumors seem to have a larger spread. Taking a look at the means, the overall mean area for maligant tumors is `r mean(breastcancer$area_mean[breastcancer$diagnosis == "M"])` which is higher than the mean for benign tumors, `r  mean(breastcancer$area_mean[breastcancer$diagnosis == "B"])`. Although, the area for malignant tumors is still overall larger, even with the larger spread. This could be because the tumor could still be "developing" and growing at a different rate. It is also unknown when each diagnosis was recorded and at what stage of cancer these results were recorded. 
+
+```{r, echo=FALSE}
+plot.univariate(breastcancer$area_mean,color.want=breastcancer$diagnosis,title.want="Distribution of the Mean Area of a Tumor", x.want="Mean Area of Tumor")
+```
+
+The graph below is the "outlier" of all the graphs above, showing the mean distribution of smoothness between malignant and benign tumors. Both malignant and benign tumors peak at the same point- at about 0.100. Both tumor types also have fairly similar graph shapes and although not the exact same the spread is similar. Taking a look at the means, the overall mean smoothness for maligant tumors is `r mean(breastcancer$smoothness_mean[breastcancer$diagnosis == "M"])` which is higher than the mean for benign tumors, `r  mean(breastcancer$smoothness_mean[breastcancer$diagnosis == "B"])`, however compared to other aspects, the means for both tumor types are very close. The similarity in smoothness, could again be due to the stage of cancer the data was recorded at. 
+
+```{r, echo=FALSE}
+plot.univariate(breastcancer$smoothness_mean,color.want=breastcancer$diagnosis,title.want="Distribution of the Mean Smoothness of a\n Tumor", x.want="Mean Smoothness of Tumor")
+```
+
+# **Multivariate Plots**
+*It is important to note in the following multivariate graphs "B" stands for benign and "M" stands for malignant.*
+
+In order to obtain the correlations for the two scatterplots below, I created a function "mean.cor" which would calculate the correlation and then print "The correlation is..". 
+```{r, include=FALSE}
+mean.cor <- c()
+mean.cor <- function(my.variable2,my.variable3){
+  cor.mean <- cor(my.variable2,my.variable3)
+  round.mean <- round(cor.mean,digits=4)
+  return(paste("The correlation is",round.mean))
+}
+```
+
+The plot below shows the distribution of mean smoothness of malignant and benign tumors. The graph below is similar to the univariate graphs from above. From this boxplot it is shown that both tumor types have outliers which could possibly skew the data so that the average is higher or lower. Additionally, the pattern of malignant tumors having a higher radius continues, in this plot we are able to see that the median for malignant tumors is significantly higher compared to the distribution of benign tumors. 
+
+```{r, echo=FALSE}
+ggplot(breastcancer) + geom_boxplot(aes(x=diagnosis, y=radius_mean)) + ggtitle("Distribution of the Mean Smoothness of a\n Malignant vs. Benign Tumor") + labs(x= "Diagnosis (Malignant or Benign)", y="Mean Smoothness of Tumor")
+```
+
+
+The scatterplot below examines the association between the mean radius and mean perimeter. `r mean.cor(breastcancer$radius_mean,breastcancer$perimeter_mean)`. The correlation is positive and very close to one, which means that the mean radius and perimeter are positively associated however this does not imply causation. Moreover, looking at the differences between malignant and benign tumors, malignant tumors seem to have a larger spread of values and tend to be greater than the mean for the radius and perimeter. However, there are values for malignant tumors which overlap the benign tumors, which could be due to the stage of cancer the data was recorded at. 
+
+```{r, echo=FALSE}
+ggplot(breastcancer) + geom_point(aes(x=radius_mean, y=perimeter_mean, color=diagnosis)) + labs(x= "Mean Radius", y="Mean Perimeter") + ggtitle("Mean Radius vs. Mean Perimeter")
+```
+
+The scatterplot below explores the distribution between the mean radius and mean area of both tumors. `r mean.cor(breastcancer$radius_mean,breastcancer$area_mean)`.The correlation is positive and is almost one, which means that the mean radius and area are positively associated however this does not imply causation. Moreover, looking at the differences between malignant and benign tumors, malignant tumors seem to have a larger spread of values and tend to be greater than the mean for the radius and area. However, compared to the previous graph there is a smaller overlap between the tumor types.
+
+```{r, echo=FALSE}
+ggplot(breastcancer) + geom_point(aes(x=radius_mean, y=area_mean, color=diagnosis)) + labs(x= "Mean Radius", y="Mean Area") + ggtitle("Mean Radius vs. Mean Area")
+```
+
+The boxplot below shows the distribtion of the mean area for both tumor types. From this boxplot it is shown that both tumor types have outliers which could possibly skew the data so that the average is higher or lower. Additionally, the pattern of malignant tumors having a higher area continues, in this plot we are able to see that the median for malignant tumors is significantly higher compared to the distribution of benign tumors. 
+
+```{r, echo=FALSE}
+ggplot(breastcancer) + geom_boxplot(aes(x=diagnosis, y=area_mean)) + ggtitle("Distribution of the Mean Area of a\n Malignant vs. Benign Tumor") + labs(x= "Diagnosis (Malignant or Benign)", y="Mean Area of Tumor")
+```
+
+The figure below, explores the distribution of the mean perimeter for both diagnoses. From this boxplot it is shown that both tumor types have outliers which could possibly skew the data so that the average is higher or lower. Additionally, the pattern of malignant tumors having a higher perimeter continues, in this plot we are able to see that the median for malignant tumors is significantly higher compared to the distribution of benign tumors.
+
+```{r, echo=FALSE}
+ggplot(breastcancer) + geom_boxplot(aes(x=diagnosis, y=perimeter_mean)) + ggtitle("Distribution of the Mean Perimeter of a\n Malignant vs. Benign Tumor") + labs(x= "Diagnosis (Malignant or Benign)", y="Mean Perimeter of Tumor")
+```
+
+# **Conclusion**
+In this report, I focused on the physical differences between malignant and benign tumors. I focused on different aspects such as the mean radius, mean perimeter, mean area, etc. For each of the different physical factors I examined, there was a common trend. Malignant tumors were always larger in area, radius, and perimeter when compared to the benign tumors. The mean for the area of a malignant tumor is `r mean(breastcancer$radius_mean[breastcancer$diagnosis == "M"])` and the mean area of a benign tumor is `r mean(breastcancer$radius_mean[breastcancer$diagnosis == "B"])`, further showing that malignant tumors are overall bigger. Malignant tumors being larger is because malignant tumors are harmful and grow at a faster rate compared to benign tumors. Whereas benign tumors grow slowly and do not spread and invade other parts of an individuals body. Overall, after looking at the graphs it is evident that malignant tumors differ significantly in physical traits, and are much bigger compared to benign tumors.  
+
+In this report, I did not have any N/A values when creating new variables or in the original dataset. Throughout this report, I faced a few problems where I needed to debug my code. For example, there were a few instances where I forgot a comma or parenthesis and I had to go back and check each line to see why the r chunk did not run. Another issue I faced was when looking at my inline code, when I knit the rmarkdown file it would not show up. I then tried the inline code with cor instead of my mean.cor function and the code showed up when I knit the file. I realized that there was something wrong in my mean.cor function, and tried changing print to return. Afterwards, I knit the rmarkdown file again, and the incline code appeared. Another example, of my debugging experience was working with my ggplot function. I wanted my univariate graphs to have two colors to show the different distributions for the malignant and benign tumors. I initially had it so that color.want equaled diagnosis, however that did not run. I tried to set the color.want equal to blue, and then when I used the function set color.want to diagnosis, however my code did not run. I then tried leaving color.want and not assigning it to anything, by doing this I was able to set color.want equal to diagnosis and my function successfully ran.  
+
+Github Repository Link: https://github.com/vidhisapru/Project-2-SDS-
+
+# **References**
+1. Chitalia RD, Kontos D. Role of texture analysis in breast MRI as a cancer biomarker: A review. J Magn Reson Imaging. 2019 Apr;49(4):927-938. doi: 10.1002/jmri.26556. Epub 2018 Nov 3. PMID: 30390383; PMCID: PMC7077754. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7077754/
+2. Matthew Hoffman, MD Fine Needle Aspirattion https://www.webmd.com/a-to-z-guides/fine-needle-aspiration
+3. Fine Needle Aspiration (FNA) of the Breast https://www.cancer.org/cancer/breast-cancer/screening-tests-and-early-detection/breast-biopsy/fine-needle-aspiration-biopsy-of-the-breast.html
+
